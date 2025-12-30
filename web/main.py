@@ -9,12 +9,13 @@ logging.basicConfig(level=logging.INFO)
 
 mcp = FastMCP(name="MCP Web Server")
 
+
 @mcp.tool
 def web_search(
     chatInput: str,
     sessionId: Optional[str] = None,
     action: Optional[str] = None,
-    toolCallId: Optional[str] = None
+    toolCallId: Optional[str] = None,
 ) -> str:
     """
     Perform a real-time web search and return a gentle, easy-to-read summary
@@ -36,13 +37,13 @@ def web_search(
     - The content is gathered from multiple sources and combined into one
       continuous response for convenience.
     """
-    logging.info(f"chatInput={chatInput}, sessionId={sessionId}, action={action}, toolCallId={toolCallId}")
+    logging.info(
+        f"chatInput={chatInput}, sessionId={sessionId}, action={action}, toolCallId={toolCallId}"
+    )
 
     client = TavilyClient(api_key=TAVILY_API_KEY)
-    response = client.search(
-        query=chatInput
-    )
-    return "".join(search['content'] for search in response['results'])
+    response = client.search(query=chatInput)
+    return "".join(search["content"] for search in response["results"])
 
 
 app = mcp.http_app()
