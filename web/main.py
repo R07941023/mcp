@@ -8,7 +8,7 @@ TAVILY_API_KEY = os.getenv("TAVILY_API_KEY")
 logging.basicConfig(level=logging.INFO)
 
 mcp = FastMCP(name="MCP Web Server")
-
+client = TavilyClient(api_key=TAVILY_API_KEY)
 
 @mcp.tool
 def web_search(
@@ -40,8 +40,6 @@ def web_search(
     logging.info(
         f"chatInput={chatInput}, sessionId={sessionId}, action={action}, toolCallId={toolCallId}"
     )
-
-    client = TavilyClient(api_key=TAVILY_API_KEY)
     response = client.search(query=chatInput)
     return "".join(search["content"] for search in response["results"])
 
