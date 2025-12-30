@@ -19,7 +19,7 @@ services:
     image: mcpgateway/nginx-cache:latest
     restart: unless-stopped
     ports:
-      - "30104:80"                   # HTTP caching proxy (public-facing)
+      - "30102:80"                   # HTTP caching proxy (public-facing)
     networks: [mcp]
     depends_on:
       gateway:
