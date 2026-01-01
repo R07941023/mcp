@@ -1,11 +1,15 @@
-from fastmcp import FastMCP, Context
-from fastmcp.server.auth.providers.jwt import JWTVerifier
+"""
+web query tools for MCP Server.
+"""
+
 import logging
 from typing import Optional
-from tavily import TavilyClient
-import yfinance as yf
 import os
 import jwt
+from tavily import TavilyClient
+from fastmcp.server.auth.providers.jwt import JWTVerifier
+from fastmcp import FastMCP, Context
+import yfinance as yf
 
 logging.basicConfig(level=logging.INFO)
 
@@ -16,18 +20,18 @@ AUDIENCE = os.getenv("AUDIENCE")
 
 client = TavilyClient(api_key=TAVILY_API_KEY)
 
-verifier = JWTVerifier(
-    jwks_uri=JWKS_URI,
-    issuer=ISSUER,
-    audience=AUDIENCE
-)
+verifier = JWTVerifier(jwks_uri=JWKS_URI, issuer=ISSUER, audience=AUDIENCE)
 
 mcp = FastMCP(name="MCP Web Server", auth=verifier)
 
+
 def get_user_info(jwt_token: str):
-  token = jwt_token.removeprefix("Bearer ").strip()
-  payload = jwt.decode(token, options={"verify_signature": False})
-  return payload.get("preferred_username")
+    """
+    Decodes JWT and returns the preferred_username from the payload.
+    """
+    token = jwt_token.removeprefix("Bearer ").strip()
+    payload = jwt.decode(token, options={"verify_signature": False})
+    return payload.get("preferred_username")
 
 
 @mcp.tool
@@ -61,7 +65,12 @@ def web_search(
     token = ctx.request_context.request.headers.get("Authorization")
     service_account = get_user_info(token)
     logging.info(
-        f"user={service_account}, chatInput={chatInput}, sessionId={sessionId}, action={action}, toolCallId={toolCallId}"
+        "user=%s, chatInput=%s, sessionId=%s, action=%s, toolCallId=%s",
+        service_account,
+        chatInput,
+        sessionId,
+        action,
+        toolCallId,
     )
     response = client.search(query=chatInput)
     return "".join(search["content"] for search in response["results"])
@@ -90,18 +99,25 @@ def stock_lookup(
     token = ctx.request_context.request.headers.get("Authorization")
     service_account = get_user_info(token)
     logging.info(
-        f"user={service_account}, symbol={symbol}, sessionId={sessionId}, action={action}, toolCallId={toolCallId}"
+        "user=%s, symbol=%s, sessionId=%s, action=%s, toolCallId=%s",
+        service_account,
+        symbol,
+        sessionId,
+        action,
+        toolCallId,
     )
     try:
         ticker = yf.Ticker(symbol)
         hist = ticker.history(period="1d")
         if hist.empty:
             return f"Could not find stock information for symbol: {symbol}"
-        
-        latest_price = hist['Close'].iloc[-1]
+        latest_price = hist["Close"].iloc[-1]
         return f"The latest stock price for {symbol} is: ${latest_price:.2f}"
-    except Exception as e:
-        logging.error(f"Error looking up stock symbol {symbol}: {e}")
-        return f"An error occurred while trying to look up the stock symbol: {symbol}"
+    except (KeyError, IndexError) as e:
+        logging.error("Data parsing error for %s: %s", symbol, e)
+        return f"Data error: Received unexpected format for symbol {symbol}."
+    except ValueError as e:
+        logging.error("Invalid value provided for %s: %s", symbol, e)
+        return f"Invalid input: The stock symbol {symbol} is not valid."
 
 app = mcp.http_app()
