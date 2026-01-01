@@ -15,6 +15,21 @@ services:
     networks:
       - mcp
 
+  mcp-rag:
+    image: ghcr.io/astral-sh/uv:python3.11-bookworm-slim
+    container_name: mcp-rag
+    hostname: "mcp-rag"
+    volumes:
+      - E:\project\mcp\rag:/app
+    working_dir: /app
+    command: sh -c "uv venv && uv sync && .venv/bin/uvicorn main:app --host 0.0.0.0 --port 8000 --reload"
+    environment:
+      JWKS_URI: "https://keycloak.mydormroom.dpdns.org/realms/mydormroom/protocol/openid-connect/certs"
+      ISSUER: "https://keycloak.mydormroom.dpdns.org/realms/mydormroom"
+      AUDIENCE: "account"
+    networks:
+      - mcp
+
   nginx:
     build:
       context: ./nginx
