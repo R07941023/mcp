@@ -3,6 +3,7 @@ from fastmcp.server.auth.providers.jwt import JWTVerifier
 import logging
 from typing import Optional
 from tavily import TavilyClient
+import yfinance as yf
 import os
 import jwt
 
@@ -64,5 +65,43 @@ def web_search(
     )
     response = client.search(query=chatInput)
     return "".join(search["content"] for search in response["results"])
+
+
+@mcp.tool
+def stock_lookup(
+    symbol: str,
+    sessionId: Optional[str] = None,
+    action: Optional[str] = None,
+    toolCallId: Optional[str] = None,
+    ctx: Context = None,
+) -> str:
+    """
+    Look up the latest stock price for a given symbol.
+
+    Parameters:
+    - symbol (required): The stock symbol to look up (e.g., "AAPL", "GOOG").
+    - sessionId (optional): Conversation session identifier.
+    - action (optional): Optional action identifier.
+    - toolCallId (optional): Tool invocation identifier.
+
+    Returns:
+    - A plain-text summary of the latest stock price information.
+    """
+    token = ctx.request_context.request.headers.get("Authorization")
+    service_account = get_user_info(token)
+    logging.info(
+        f"user={service_account}, symbol={symbol}, sessionId={sessionId}, action={action}, toolCallId={toolCallId}"
+    )
+    try:
+        ticker = yf.Ticker(symbol)
+        hist = ticker.history(period="1d")
+        if hist.empty:
+            return f"Could not find stock information for symbol: {symbol}"
+        
+        latest_price = hist['Close'].iloc[-1]
+        return f"The latest stock price for {symbol} is: ${latest_price:.2f}"
+    except Exception as e:
+        logging.error(f"Error looking up stock symbol {symbol}: {e}")
+        return f"An error occurred while trying to look up the stock symbol: {symbol}"
 
 app = mcp.http_app()
