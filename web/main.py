@@ -6,10 +6,11 @@ import logging
 from typing import Optional
 import os
 import jwt
-from tavily import TavilyClient
+from tavily import TavilyClient, TavilyError
 from fastmcp.server.auth.providers.jwt import JWTVerifier
 from fastmcp import FastMCP, Context
 import yfinance as yf
+import requests
 
 logging.basicConfig(level=logging.INFO)
 
@@ -72,8 +73,21 @@ def web_search(
         action,
         toolCallId,
     )
-    response = client.search(query=chatInput)
-    return "".join(search["content"] for search in response["results"])
+    try:
+        response = client.search(query=chatInput)
+        return "".join(search["content"] for search in response["results"])
+    except requests.exceptions.ConnectionError as e:
+        logging.error("DNS/Network error for Tavily: %s", str(e))
+        return "Network Error: Failed to resolve search service address (DNS issue)."
+    except requests.exceptions.Timeout as e:
+        logging.error("Tavily search timeout: %s", str(e))
+        return "Search request timed out. Please try again later."
+    except TavilyError as e:
+        logging.error("Tavily API error: %s", str(e))
+        return "Search API error"
+    except requests.exceptions.RequestException as e:
+        logging.error("Unexpected search request error: %s", str(e))
+        return "Search service is temporarily unavailable."
 
 
 @mcp.tool
