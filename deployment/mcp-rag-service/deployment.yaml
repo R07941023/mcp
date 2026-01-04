@@ -1,0 +1,33 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mcp-rag-service
+  labels:
+    app: mcp-rag-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mcp-rag-service
+  template:
+    metadata:
+      labels:
+        app: mcp-rag-service
+    spec:
+      containers:
+      - name: mcp-rag-service
+        image: yenyinglu/mcp-rag-service:6c45559e
+        ports:
+        - containerPort: 8000
+        env:
+        - name: POSTGRES_HOST
+          value: postgres.infra-net.svc.cluster.local
+        - name: POSTGRES_PORT
+          value: "5432"
+        - name: POSTGRES_USER
+          value: "postgres"
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: keyvault
+              key: POSTGRES_PASSWORD
