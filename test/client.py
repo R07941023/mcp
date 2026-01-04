@@ -1,22 +1,21 @@
 import asyncio
-from langchain_ollama import ChatOllama
+# from langchain_ollama import ChatOllama
+from langchain_openai import ChatOpenAI
 from langchain_core.messages import ToolMessage
 from langchain_mcp_adapters.client import MultiServerMCPClient
 from langchain.agents import create_agent
 from langchain.messages import SystemMessage, HumanMessage
 from langfuse.langchain import CallbackHandler
 from langfuse import Langfuse
+from dotenv import load_dotenv
 import os
 
+load_dotenv()
 
-os.environ["TAVILY_API_KEY"] = "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"
-os.environ["LANGFUSE_PUBLIC_KEY"] = "pk-lf-b3c57e2f-0927-46bb-b5ab-c2dc30fc10f4"
-os.environ["LANGFUSE_SECRET_KEY"] = "sk-lf-0b7a13c5-657f-439a-9831-314910149763"
-os.environ["LANGFUSE_BASE_URL"] = "https://langfuse.mydormroom.dpdns.org"
+os.environ["OPENAI_API_KEY"]=os.getenv("LITELLM_API_KEY")
+mcp_token = os.getenv("MCP_TOKEN")
 langfuse = Langfuse()
 langfuse_handler = CallbackHandler()
-
-server_url = 'http://host.docker.internal:11434'
 
 async def main():
 
@@ -28,9 +27,9 @@ async def main():
         {
             "weather": {
                 "transport": "streamable_http",
-                "url": "http://host.docker.internal:30104/mcp",
+                "url": "http://host.docker.internal:30102/servers/fe5c6f8a05154a2eb5f04f691ec321a5/mcp",
                 "headers": {
-                    "Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhZG1pbkBleGFtcGxlLmNvbSIsImlzcyI6Im1jcGdhdGV3YXkiLCJhdWQiOiJtY3BnYXRld2F5LWFwaSIsImlhdCI6MTc2NjY4OTY0OCwianRpIjoiMzRlMDVkNWQtNmQ1Yy00OWFjLWI1OTgtZDAzZDdkODZmNWU1IiwidXNlciI6eyJlbWFpbCI6ImFkbWluQGV4YW1wbGUuY29tIiwiZnVsbF9uYW1lIjoiQVBJIFRva2VuIFVzZXIiLCJpc19hZG1pbiI6dHJ1ZSwiYXV0aF9wcm92aWRlciI6ImFwaV90b2tlbiJ9LCJ0ZWFtcyI6W10sIm5hbWVzcGFjZXMiOlsidXNlcjphZG1pbkBleGFtcGxlLmNvbSIsInB1YmxpYyJdLCJleHAiOjE3NjkyODE2NDgsInNjb3BlcyI6eyJzZXJ2ZXJfaWQiOiIyMzdiOGU2YjhjOWU0N2E1YWI1OWIxZWY2ZjdhMDMzOSIsInBlcm1pc3Npb25zIjpbIioiXSwiaXBfcmVzdHJpY3Rpb25zIjpbXSwidGltZV9yZXN0cmljdGlvbnMiOnt9fX0.FHQ2u4sbm-2aZwE8KARM9ZRyYLtZ2cSqCElXFQcmM0M",
+                    "Authorization": "Bearer " + mcp_token,
                     "Accept": "application/json"
                 }
             }
@@ -40,10 +39,15 @@ async def main():
     tools = await client.get_tools()
     print("可用的工具:", [t.name for t in tools])
 
-    llm = ChatOllama(
-        model="gpt-oss:20b",
+    # llm = ChatOllama(
+    #     model="gpt-oss:20b",
+    #     temperature=0,
+    #     base_url='http://host.docker.internal:11434',
+    # )
+    llm = ChatOpenAI(
+        openai_api_base="https://litellm.mydormroom.dpdns.org",
         temperature=0,
-        base_url=server_url,
+        model = "gemini/gemini-2.5-flash",
     )
     agent = create_agent(
         llm,
@@ -52,7 +56,7 @@ async def main():
     )
 
     result = await agent.ainvoke(
-        {"messages": [HumanMessage("新竹今天天氣如何??")]}
+        {"messages": [HumanMessage("台積電和聯發科的今天收盤價")]}
     , config={"callbacks":[langfuse_handler]})
     
     print(result["messages"][-1].content)
