@@ -1,0 +1,33 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mcp-web
+  labels:
+    app: mcp-web
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mcp-web
+  template:
+    metadata:
+      labels:
+        app: mcp-web
+    spec:
+      containers:
+      - name: mcp-web
+        image: yenyinglu/mcp-web:6c45559e
+        ports:
+        - containerPort: 8000
+        env:
+        - name: TAVILY_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: keyvault
+              key: TAVILY_API_KEY
+        - name: JWKS_URI
+          value: "https://keycloak.mydormroom.dpdns.org/realms/mydormroom/protocol/openid-connect/certs"
+        - name: ISSUER
+          value: "https://keycloak.mydormroom.dpdns.org/realms/mydormroom"
+        - name: AUDIENCE
+          value: "account"

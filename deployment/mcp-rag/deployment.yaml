@@ -1,0 +1,28 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mcp-rag
+  labels:
+    app: mcp-rag
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mcp-rag
+  template:
+    metadata:
+      labels:
+        app: mcp-rag
+    spec:
+      containers:
+      - name: mcp-rag
+        image: yenyinglu/mcp-rag:6c45559e
+        ports:
+        - containerPort: 8000
+        env:
+        - name: JWKS_URI
+          value: "https://keycloak.mydormroom.dpdns.org/realms/mydormroom/protocol/openid-connect/certs"
+        - name: ISSUER
+          value: "https://keycloak.mydormroom.dpdns.org/realms/mydormroom"
+        - name: AUDIENCE
+          value: "account"

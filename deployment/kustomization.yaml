@@ -2,5 +2,9 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
 resources:
+  - mcp-rag/deployment.yaml
+  - mcp-rag/service.yaml
   - mcp-rag-service/deployment.yaml
   - mcp-rag-service/service.yaml
+  - mcp-web/deployment.yaml
+  - mcp-web/service.yaml
