@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
       - name: mcp-rag-service
-        image: yenyinglu/mcp-rag-service:6c45559e
+        image: yenyinglu/mcp-rag-service:97bb5aee
         ports:
         - containerPort: 8000
         env:
